@@ -1,0 +1,41 @@
+Author: Shirley Sir
+
+Alright, so you want Dottie's bot, and you have no clue how to make it work
+
+You probably just downloaded python, and the code, and it does nothing.
+
+good job, you've completed part 1.
+
+
+
+
+Step 1: Download python, latest version is fine.
+
+Step 2: Download Dotties code, you can either download the .py file, or just copy paste into IDLE and save as a .py file
+
+Step 3: Go into the path you downloaded python to, default path is C:\Users\(YOU)\AppData\Local\Programs\Python\Python(version), keep that open
+
+Step 4: Open command line
+
+Step 5: type in CD C:\Users\(YOU)\AppData\Local\Programs\Python\Python(version)\Scripts
+
+Step 6: run the following commands, one by one
+
+pip3 install praw
+pip3 install dhooks
+pip3 install datetime
+
+
+Step 7: Close command line and pat yourself on the back for doing a good job
+
+Step 8: open the python file, and fill it in, Dottie wrote some good instructions in the comments
+
+Step 8.5: Respect the fact that Dottie actually commented the code
+
+Step 9: Once it's all filled in, close the editor
+
+Step 10: Place the program in your python folder, the same one thats C:\Users\(YOU)\AppData\Local\Programs\Python\Python(version)
+
+Step 11: Run the program
+
+Step 12: If the program opens a black box and sits there, good job, its running.
