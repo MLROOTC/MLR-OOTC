@@ -1,7 +1,6 @@
 import db_controller as db
 import sheets_reader as sheets
 
-table = 'Win Expectancy'
 sheet_id = '1uBhS7LKsthvimuDFrF4BtMW5bNrrwugGGviPT5McRAc'
 page_name = 'Parks'
 
