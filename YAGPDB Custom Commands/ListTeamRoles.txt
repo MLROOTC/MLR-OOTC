@@ -1,0 +1,8 @@
+{{/* === spits out a list of the team roles stored in the db === */}}
+{{ $teamRoles := dbGetPattern .0 "teamRoles_%" 100 0 }}
+{{ range $teamRoles }}
+{{- $strippedKey := slice .Key 10 (len .Key) }}
+`{{ $strippedKey }} {{ .Value }}`
+{{- else }}
+You don't have any team roles :(
+{{ end }}

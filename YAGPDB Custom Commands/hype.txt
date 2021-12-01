@@ -1,0 +1,120 @@
+{{/* Hype command! */}}
+{{/* by isaac and zum */}}
+ 
+{{/* change this to the channel you want the debug info to be sent to */}}
+{{ $debugChannelName := "role-testing" }}
+ 
+{{ $channelObj := getChannel nil }}
+{{ $debugChannelObj := getChannel $debugChannelName }}
+ 
+{{/* === cooldown check === */}}
+{{ $cooldownKey := "mlr_hype_command_cooldown" }}
+{{ $cooldownUserId := (toInt64 .User.ID) }}
+{{ if $db := (dbGet $cooldownUserId $cooldownKey) }}
+Slow down there, partner, we don't need you trying to Pokerap here. Cooldown will be over in {{humanizeDurationSeconds ($db.ExpiresAt.Sub currentTime)}}.
+{{ else }}
+ 
+{{/* === parse arguments === */}}
+{{ $args := parseArgs 2 "`-hype <team> <link> <highlightMessage>`\n`team` - Team abbreviation e.g. `DET`\n`link` - Permalink to game thread AB\n`highlightMessage` - Message to display, e.g. `Miggy hits a two-run bomb to put the Tigers on top 3-2!`"
+	(carg "string" "team") 
+	(carg "string" "link")
+	(carg "string" "highlightMessage")
+}}
+{{ $teamAbbr := upper ($args.Get 0) }}
+{{ $threadLink := ($args.Get 1) }} {{/* todo: maybe pull this from scoreboard thread db when we set that up? or keep it as permalink to specific comment */}}
+{{ $highlight := joinStr "" $teamAbbr " just did something cool!" }}
+{{ if $args.IsSet 2 }}
+	{{ $highlight = $args.Get 2 }}
+{{ end }}
+ 
+{{/* === init vars === */}}
+{{ $teamRolePing := "" }}
+{{ $hypeRolePing := "" }}
+{{ $teamRoleObj := sdict }}
+ 
+{{/* === create team role mention and store role object for later === */}}
+{{ $teamRole := dbGet .0 (joinStr "" "teamRoles_"  $teamAbbr) }}
+{{if $teamRole}}
+	{{ $teamRolePing =  joinStr "" "<@&" $teamRole.Value ">" }}
+	{{ range $k, $v := .Guild.Roles }}
+		{{- $dict := structToSdict $v }}
+		{{- if eq (toString ($dict.Get "ID")) ($teamRole.Value) }}
+			{{- $teamRoleObj = $dict }}
+		{{- end }}
+	{{ end }}
+{{ end }}
+ 
+{{/* === create hype role mention === */}}
+{{ $hypeRole := dbGet .0 (joinStr "" "hypeRoles_" $teamAbbr) }}
+{{if $hypeRole}}
+	{{ $hypeRolePing =  joinStr "" "<@&" $hypeRole.Value ">" }}
+{{ end }}
+ 
+{{/* === pick gif randomly from configured list === */}}
+{{ $theGif := "[none]" }}
+{{ $hypeGifs := dbGet .0 (joinStr "" "randomGifs_" $teamAbbr) }}
+{{ if $hypeGifs }}
+	{{/* === pick a random gif from the configured list === */}}
+	{{ $gifSlice := (cslice).AppendSlice ($hypeGifs.Value) }}
+	{{ if gt (len $gifSlice) 0 }}
+		{{ $idx := randInt (len $gifSlice) }}
+		{{ $theGif = index $gifSlice $idx }}
+	{{ end }}
+{{ end }}
+ 
+{{/* === pick embed title randomly from preset list === */}}
+{{/* todo: maybe have these be configurable by team as well? */}}
+{{ $titles := cslice
+	"TIME FOR A GAME BREAK"
+	"BREAKING NEWS"
+	"( ͡° ͜ʖ ͡°)"
+	"Well...that happened."
+	"...and now for something completely different."
+}}
+{{ $theTitle := index $titles (randInt (len $titles)) }}
+ 
+{{ if ne $theGif "[none]" }}
+	{{sendMessageNoEscape ($channelObj.ID)
+		( complexMessage
+			"content" ( joinStr "" $teamRolePing " " $hypeRolePing )
+			"embed"  (cembed 
+				"image" ( sdict "url" $theGif )
+				"title" $theTitle
+				"url" $threadLink
+				"description" ( joinStr "" "[" $highlight "\nClick me to see the play in the game thread!](" $threadLink ")" )
+				"footer" (sdict "text" ( joinStr "" "Highlight via umpire " .User.Username ) "icon_url" (.User.AvatarURL "128") )
+				"color" ($teamRoleObj.Get "Color")
+			)
+		)
+	}}
+{{ else }}
+{{/* === send embed without gif === */}}
+{{ sendMessageNoEscape ($channelObj.ID)
+	( complexMessage
+		"content" ( joinStr "" $teamRolePing " " $hypeRolePing )
+		"embed"  (cembed 
+			"title" $theTitle
+			"url" $threadLink
+			"description" ( joinStr "" "[" $highlight "\nClick me to see the play in the game thread!](" $threadLink ")" )
+			"footer" (sdict "text" ( joinStr "" "Highlight via umpire " .User.Username ) "icon_url" (.User.AvatarURL "128") )
+			"color" ($teamRoleObj.Get "Color")
+		)
+	)
+}}
+{{ end }}
+{{/* command successful, display nice message to user and delete trigger */}}
+{{ dbSetExpire $cooldownUserId $cooldownKey "cooldown" 20 }}
+{{ deleteTrigger 0 }}
+ 
+{{ $debugEmbed := sdict
+	"title" "Hype debug"
+	"fields" (cslice
+		(sdict "name" "Username" "value" .User.Username "inline" true)
+		(sdict "name" "Team" "value" $teamAbbr "inline" true)
+		(sdict "name" "Link" "value" $threadLink "inline" true)
+		(sdict "name" "Message" "value" $highlight "inline" true)
+		(sdict "name" "Chosen GIF" "value" $theGif "inline" true)
+	)
+}}
+{{ sendMessageNoEscape ($debugChannelObj.ID) (complexMessage "embed" $debugEmbed) }}
+{{ end }} {{/* end cooldown check block */}}

@@ -1,0 +1,11 @@
+{{/* === saves the given role ID to be used with the -hype command for the given team === */}}
+{{$args := parseArgs 2 "Syntax: `-AddHypeRole <teamAbbr> <roleId>`\n`<teamAbbr>` - e.g. `NYY`\n`<roleId>` - right click role in admin, click Copy ID"
+  (carg "string" "teamAbbr")
+  (carg "string" "roleId")}}
+ 
+{{ $teamAbbr := upper ($args.Get 0) }}
+{{ $roleId := $args.Get 1 }}
+ 
+{{ $dbKey := joinStr "" "hypeRoles_" $teamAbbr }}
+{{ dbSet .0 $dbKey $roleId }}
+Saved `{{ $roleId }}` as `{{ $dbKey }}`

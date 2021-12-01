@@ -1,0 +1,23 @@
+{{$args := parseArgs 2 "Need a team and #"
+	(carg "string" "team")
+	(carg "int" "number")
+}}
+{{$gifSlice := cslice}}
+{{$newGifSlice := cslice}}
+{{$teamAbbr := upper ($args.Get 0) }}
+{{$gifIndex := sub ($args.Get 1) 1}}
+ 
+{{$dbKey := joinStr "" "randomGifs_" $teamAbbr}}
+ 
+{{ $gifDb := ( dbGet 0 $dbKey ) }}
+{{ if $gifDb }}
+{{ $gifSlice = (cslice).AppendSlice ($gifDb.Value) }}
+{{range $index,$value:= $gifSlice}}
+	{{- if ne $index $gifIndex}}
+		{{- $newGifSlice = $newGifSlice.Append .}}
+	{{- else }}
+``Deleted {{.}}``
+	{{- end}}
+{{- end }}
+{{ dbSet 0 $dbKey $newGifSlice }}
+{{ end }}
