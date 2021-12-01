@@ -1,0 +1,31 @@
+{{$args := parseArgs 2 "Need a team and #"
+	(carg "string" "team")
+	(carg "int" "number")
+}}
+{{$gifSlice := cslice}}
+{{$newGifSlice := cslice}}
+{{$teamAbbr := upper ($args.Get 0) }}
+{{$gifIndex := sub ($args.Get 1) 1}}
+ 
+{{ $theGif := "[none]" }}
+{{ $hypeGifs := dbGet .0 (joinStr "" "randomGifs_" $teamAbbr) }}
+{{ if $hypeGifs }}
+	{{ $gifSlice := (cslice).AppendSlice ($hypeGifs.Value) }}
+	{{ if gt (len $gifSlice) 0 }}
+		{{ $theGif = index $gifSlice $gifIndex }}
+	{{ end }}
+{{ end }}
+ 
+{{ $channelObj := getChannel nil }}
+ 
+{{sendMessageNoEscape ($channelObj.ID)
+	( complexMessage
+		"content" ( joinStr "" "Testing Gif #" (add ($gifIndex) 1) )
+		"embed"  (cembed 
+		"image" ( sdict "url" $theGif )
+		"title" ( joinStr "" "Testing Gif #" (add ($gifIndex) 1) )
+		"description" ( "If this does not show your gif, you ignored the directions that were put in the pins in this channel. The gif must be a raw .gif file, beware of tenor, giphy etc. not linking directly to a .gif. If having trouble, contact Isaac, Zum, or someone smart with technological doodads." )
+		"footer" (sdict "text" ( joinStr "" "Tested by:" .User.Username ) "icon_url" (.User.AvatarURL "128") )
+		)
+	)
+}}

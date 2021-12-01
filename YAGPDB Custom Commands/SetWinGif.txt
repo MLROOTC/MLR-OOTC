@@ -1,0 +1,24 @@
+{{/* === saves the given end game gif to be used with the -endgame command for the given team === */}}
+{{ $args := parseArgs 2 "Syntax: `-SetWinGif <team> <link>`\n`<team>` - team abbreviation e.g. `NYY`\n`<link>` - a link to a .gif (must be a raw .gif file, beware of giphy etc. not linking directly to a .gif)"
+	(carg "string" "team")
+	(carg "string" "link") }}
+ 
+{{ $teamAbbr := upper ($args.Get 0) }}
+{{ $gifLink := $args.Get 1 }}
+ 
+{{ $dbKey := joinStr "" "winGifs_" $teamAbbr }}
+{{ dbSet .0 $dbKey $gifLink }}
+ 
+{{ $channelObj := getChannel nil }}
+ 
+{{sendMessageNoEscape ($channelObj.ID)
+	( complexMessage
+		"content" ( "Testing Win Gif" )
+		"embed"  (cembed 
+		"image" ( sdict "url" $gifLink )
+		"title" ("Testing Win Gif" )
+		"description" ( "If this does not show your gif, you ignored the directions that were put in the pins in this channel. The gif must be a raw .gif file, beware of tenor, giphy etc. not linking directly to a .gif. If having trouble, contact Isaac, Zum, or someone smart with technological doodads." )
+		"footer" (sdict "text" ( joinStr "" "Tested by:" .User.Username ) "icon_url" (.User.AvatarURL "128") )
+		)
+	)
+}}

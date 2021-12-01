@@ -1,0 +1,130 @@
+{{/* === cooldown check === */}}
+{{ $cooldownKey := "mlr_hype_command_cooldown" }}
+{{ $cooldownUserId := (toInt64 .User.ID) }}
+{{ if $db := (dbGet $cooldownUserId $cooldownKey) }}
+Slow down there, partner, we don't need you trying to Pokerap here. Cooldown will be over in {{humanizeDurationSeconds ($db.ExpiresAt.Sub currentTime)}}.
+{{ else }}
+ 
+{{ $args := parseArgs 3 "`-EndGame <team1> <team2> <link> <highlightMessage>`\n`team1` - Winning team abbreviation e.g. `BOS`\n`team2` - Losing team abbreviation e.g. `NYY`\n`link` - Permalink to game thread AB\n`highlightMessage` - Message to display, e.g. `Boston hits a walkoff homerun in the bottom of the 7th to take the 3-2 win from the Yanks!`"
+ 
+	(carg "string" "team1") 
+ 
+	(carg "string" "team2") 
+ 
+	(carg "string" "link")
+ 
+	(carg "string" "highlightMessage")
+ 
+}}
+ 
+{{$teamAbbr1 := upper ($args.Get 0) }}
+ 
+{{$teamAbbr2 := upper ($args.Get 1) }}
+ 
+{{$gameUrl := ($args.Get 2)}}
+ 
+{{ $highlight := joinStr "" $teamAbbr1 " wins!" }}
+{{ if $args.IsSet 3 }}
+ 
+	{{ $highlight = $args.Get 3 }}
+ 
+{{ end }}
+ 
+{{$teamRolePing := ""}}
+ 
+ 
+{{$team1Role := dbGet .0 (joinStr "" "teamRoles_"  $teamAbbr1)}}
+ 
+{{$team2Role := dbGet .0 (joinStr "" "teamRoles_"  $teamAbbr2)}}
+ 
+{{$hypeRole1 := dbGet .0 (joinStr "" "hypeRoles_" $teamAbbr1)}}
+ 
+{{$hypeRole2 := dbGet .0 (joinStr "" "hypeRoles_" $teamAbbr2)}}
+ 
+{{ $hypeRolePing := "" }}
+ 
+{{if and $hypeRole1 $hypeRole2 }}
+ 
+	{{ $hypeRolePing =  joinStr "" "<@&" $hypeRole1.Value ">" }}
+ 
+{{ end }}
+ 
+{{if and $team1Role $team2Role }}
+ 
+	{{ $teamRolePing =  joinStr "" "<@&" $team1Role.Value "> <@&" $team2Role.Value ">" $hypeRolePing }}
+	{{/* command successful, display nice message to user and delete trigger */}}
+	{{ dbSetExpire $cooldownUserId $cooldownKey "cooldown" 30 }}
+	{{ deleteTrigger 0 }}
+ 
+{{ else }}
+ 
+	{{if $team1Role}}
+ 
+		``Second Paramater is an Invalid team``
+ 
+	{{ else }}
+ 
+		``First Parameter is an Invalid team``
+ 
+	{{ end }}
+ 
+ 
+ 
+{{ end }}
+ 
+ 
+ 
+{{ $color := 0 }}
+ 
+{{/* === need the color from the winning team (team 1) === */}}
+ 
+{{ range $k, $v := .Guild.Roles }}
+ 
+	{{- $dict := structToSdict $v }}
+ 
+	{{- if eq (toString ($dict.Get "ID")) ($team1Role.Value) }}
+ 
+		{{- $color = $dict.Get "Color" }}
+ 
+	{{- end }}
+ 
+{{ end }}
+ 
+{{ $winGif := dbGet .0 (joinStr "" "winGifs_" $teamAbbr1) }}
+ 
+{{ if $winGif }}
+	{{sendMessageNoEscape nil
+ 
+		( complexMessage
+ 
+			"content" ( $teamRolePing )
+ 
+			"embed" ( cembed
+				"image" ( sdict "url" $winGif.Value )
+				"title" (joinStr "" "GAME Complete! " $teamAbbr1 " wins over " $teamAbbr2 "!")
+				"description" ( joinStr "" $highlight "\n[Click here to check out the game thread!](" $gameUrl ")" )
+				"url" $gameUrl
+				"footer" (sdict "text" ( joinStr "" "Game ended by umpire " .User.Username ) "icon_url" (.User.AvatarURL "128") )
+				"color" $color
+			) 
+		)
+	}}
+{{ else }}
+	{{sendMessageNoEscape nil
+ 
+		( complexMessage
+ 
+			"content" ( $teamRolePing )
+ 
+			"embed" ( cembed
+				"title" (joinStr "" "GAME Complete! " $teamAbbr1 " wins over " $teamAbbr2 "!")
+				"description" ( joinStr "" $highlight "\n[Click here to check out the game thread!](" $gameUrl ")" )
+				"url" $gameUrl
+				"footer" (sdict "text" ( joinStr "" "Game ended by umpire " .User.Username ) "icon_url" (.User.AvatarURL "128") )
+				"color" $color
+			) 
+		)
+	}}
+{{ end }}
+ 
+{{ end }} {{/* end cooldown check block */}}

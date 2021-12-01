@@ -1,0 +1,8 @@
+{{/* === spits out a list of the hype roles stored in the db === */}}
+{{ $hypeRoles := dbGetPattern .0 "hypeRoles_%" 100 0 }}
+{{ range $hypeRoles }}
+{{- $strippedKey := slice .Key 10 (len .Key) }}
+`{{ $strippedKey }} {{ .Value }}` created {{ humanizeTimeSinceDays .CreatedAt }} ago
+{{- else }}
+You don't have any hype roles :(
+{{ end }}

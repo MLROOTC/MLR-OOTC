@@ -1,0 +1,43 @@
+{{/* === adds a .gif link to the team gif list that -hype pulls from randomly when constructing a hype embed === */}}
+{{ $args := parseArgs 2 "Syntax: `-AddTeamGif <team> <link>`\n`<team>` - team abbreviation e.g. `NYY`\n`<link>` - a link to a .gif (must be a raw .gif file, beware of giphy etc. not linking directly to a .gif)"
+	(carg "string" "team")
+	(carg "string" "link") }}
+{{ $teamAbbr := upper ($args.Get 0) }}
+{{ $gifLink := $args.Get 1 }}
+{{ $gifSlice := cslice }}
+{{ $gifIndex := 0 }}
+ 
+{{ $dbKey := joinStr "" "randomGifs_" $teamAbbr }}
+ 
+{{ $gifDb := dbGet .0 $dbKey }}
+{{ if $gifDb }}
+	{{ $gifSlice = (cslice).AppendSlice ($gifDb.Value) }}
+{{ end }}
+ 
+{{ $gifSlice = $gifSlice.Append $gifLink }}
+{{ dbSet 0 $dbKey $gifSlice }}
+Added GIF for {{$teamAbbr}}.
+ 
+{{ $theGif := "[none]" }}
+{{ $hypeGifs := dbGet .0 (joinStr "" "randomGifs_" $teamAbbr) }}
+{{ if $hypeGifs }}
+	{{ $gifSlice := (cslice).AppendSlice ($hypeGifs.Value) }}
+	{{ if gt (len $gifSlice) 0 }}
+		{{ $gifIndex = sub (len $gifSlice) 1 }}
+		{{ $theGif = index $gifSlice $gifIndex }}
+	{{ end }}
+{{ end }}
+ 
+{{ $channelObj := getChannel nil }}
+ 
+{{sendMessageNoEscape ($channelObj.ID)
+	( complexMessage
+		"content" ( joinStr "" "Testing Gif #" (add ($gifIndex) 1) )
+		"embed"  (cembed 
+		"image" ( sdict "url" $theGif )
+		"title" ( joinStr "" "Testing Gif #" (add ($gifIndex) 1) )
+		"description" ( "If this does not show your gif, you ignored the directions that were put in the pins in this channel. The gif must be a raw .gif file, beware of tenor, giphy etc. not linking directly to a .gif. If having trouble, contact Isaac, Zum, or someone smart with technological doodads." )
+		"footer" (sdict "text" ( joinStr "" "Tested by:" .User.Username ) "icon_url" (.User.AvatarURL "128") )
+		)
+	)
+}}

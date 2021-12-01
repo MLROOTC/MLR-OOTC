@@ -1,0 +1,55 @@
+{{/* === cooldown check === */}}
+{{ $cooldownKey := "mlr_hype_command_cooldown" }}
+{{ $cooldownUserId := (toInt64 .User.ID) }}
+{{ if $db := (dbGet $cooldownUserId $cooldownKey) }}
+Slow down there, partner, we don't need you trying to Pokerap here. Cooldown will be over in {{humanizeDurationSeconds ($db.ExpiresAt.Sub currentTime)}}. {{ else }}
+ 
+{{$args := parseArgs 3 "`-StartGame {Away Team (PIT, TEX, etc.)} {Home Team (PIT, TEX, etc.)} {hyperlink}`"
+    (carg "string" "Team Abbr (PIT, etc.)")
+    (carg "string" "Team Abbr (PIT, etc.)")
+    (carg "string" "url")}}
+ 
+{{$teamAbbr1 := upper ($args.Get 0) }}
+{{$teamAbbr2 := upper ($args.Get 1) }}
+{{$gameUrl := ($args.Get 2)}}
+{{$teamRolePing := ""}}
+ 
+{{$team1Role := dbGet .0 (joinStr "" "teamRoles_"  $teamAbbr1)}}
+{{$team2Role := dbGet .0 (joinStr "" "teamRoles_"  $teamAbbr2)}}
+ 
+{{if and $team1Role $team2Role}}
+	{{ $teamRolePing =  joinStr "" "<@&" $team1Role.Value "> <@&" $team2Role.Value ">" }}
+        {{/* command successful, display nice message to user and delete trigger */}}
+	{{ dbSetExpire $cooldownUserId $cooldownKey "cooldown" 30 }}
+	{{ deleteTrigger 0 }}
+{{ else }}
+	{{if $team1Role}}
+		``Second Paramater is an Invalid team``
+	{{ else }}
+		``First Parameter is an Invalid team``
+	{{ end }}
+ 
+{{ end }}
+ 
+{{ $color := 0 }}
+{{/* === need the color from the home team (team 2) === */}}
+{{ range $k, $v := .Guild.Roles }}
+	{{- $dict := structToSdict $v }}
+	{{- if eq (toString ($dict.Get "ID")) ($team2Role.Value) }}
+		{{- $color = $dict.Get "Color" }}
+	{{- end }}
+{{ end }}
+ 
+{{sendMessageNoEscape nil
+	( complexMessage
+		"content" ( $teamRolePing )
+		"embed" ( cembed
+			"title" (joinStr "" "GAME THREAD! " $teamAbbr1 "@" $teamAbbr2 " is about to start!")
+			"description" ( joinStr "" "[Click here to check out the game thread!](" $gameUrl ")" )
+			"url" $gameUrl
+			"footer" (sdict "text" ( joinStr "" "Game Thread created by umpire " .User.Username ) "icon_url" (.User.AvatarURL "128") )
+			"color" $color
+		) 
+	)
+}}
+{{ end }} {{/* end cooldown check block */}}

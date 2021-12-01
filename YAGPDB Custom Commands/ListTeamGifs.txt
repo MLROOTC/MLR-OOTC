@@ -1,0 +1,16 @@
+{{$args := parseArgs 1 "Need a team"
+	(carg "string" "team")
+}}
+{{$teamAbbr := upper ($args.Get 0) }}
+{{$randomGifs := dbGet .0 (joinStr "" "randomGifs_" $teamAbbr)}}
+ 
+{{if $randomGifs}} 
+{{ $gifSlice := (cslice).AppendSlice ($randomGifs.Value) }}
+{{range $index,$value:= $gifSlice}}
+`{{add $index 1}}. {{.}}`
+{{- else}}
+That team does not have any team gifs :(
+{{end}}
+{{else}}
+That team does not have any team gifs :(
+{{end}}

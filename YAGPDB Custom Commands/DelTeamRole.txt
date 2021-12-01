@@ -1,0 +1,10 @@
+{{/* === deletes a team role from the db - it will stop being pinged when -hype is used === */}}
+{{ $args := parseArgs 1 "Syntax: `-DelTeamRole <team>`\n`<team>` - Team abbreviation e.g. `NYY`"
+  (carg "string" "teamAbbr")}}
+ 
+{{ $teamAbbr := upper ($args.Get 0) }}
+{{ $dbKey := joinStr "" "teamRoles_" $teamAbbr }}
+{{$gifKey := joinStr "" "randomGifs_" $teamAbbr}}
+{{ dbDel .0 $dbKey }}
+{{ dbDel .0 $gifKey }}
+Deleted `{{ $dbKey }} and {{ $gifKey }}`

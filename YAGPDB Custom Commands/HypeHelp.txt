@@ -1,0 +1,21 @@
+```
+Ump Commands
+-Hype <teamAbbr> <link> <highlightMessage>
+-StartGame <awayTeamAbbr1> <homeTeamAbbr2> <hyperlink>
+-EndGame <winningTeamAbbr1> <losingTeamAbbr2> <hyperlink> <highlightMessage>
+ 
+GM Commands
+-AddTeamGif <teamAbbr> <link>
+-ListTeamGifs <teamAbbr>
+-DelTeamGif <teamAbbr> <# of gif>
+-TestTeamGif <teamAbbr> <# of gif>
+-SetWinGif <teamAbbr> <link> (beta)
+ 
+Admin Commands
+-AddTeamRole <teamAbbr> <roleId>
+-AddHypeRole <teamAbbr> <roleId>
+-ListTeamRoles <teamAbbr>
+-ListHypeRoles <teamAbbr>
+-DelTeamRole <teamAbbr>
+-DelHypeRole <teamAbbr>
+```
